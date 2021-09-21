@@ -1,6 +1,6 @@
 ---
 title: 'Team 1: '
-author: "Kaiyu Wang,Chinar,,,,"
+author: "Kaiyu Wang,Chinar,Urvashi,Chun,,"
 output:
   html_document:
     df_print: paged
@@ -104,6 +104,10 @@ common_theme
 ```{r}
 a <- CHD[,c(1,3,5,7,9,11,13,15)]
 pairs(a, col = "coral",main = "Pairwise Correlation Analysis")
+```
 
-
+```{r}
+ggplot(data = CHD, aes(BMI,glucose,color = age)) + geom_point(fill = "blue") 
+ggplot(data = CHD, aes(x = cigsPerDay, color = education)) + geom_histogram(color="black", fill="pink")+labs(x='Ciggarettes per day', y = 'Count of people')
+#+  + geom_vline(aes(intercept=mean(cigsPerDay)), color="blue", linetype="dashed", size=12)
 ```
