@@ -9,21 +9,61 @@ output:
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
 ```
-## Setup
+## I.Setup
 ```{r}
-install.packages('readr', dependencies = TRUE, repos='http://cran.rstudio.com/')
+#install.packages('readr', dependencies = TRUE, repos='http://cran.rstudio.com/')
 library(readr)
 library(data.table)
 library(ggplot2)
 library(dplyr)
-CHD_raw <-read_csv("framingham.csv")
+library(reshape2)
+library(glmnet)
+library(ROCR)
+library(pROC)
+library(PRROC)
+library(lattice)
+library(caret)
+library(e1071)
+CHD <-fread("framingham.csv")
 ```
-## Clean Data
+## II.Clean Data
+### 1. Summary
 ```{r}
-CHD<-na.omit(CHD_raw)
+summary(CHD)
+```
+
+### 2. Replace NA
+```{r}
+education_median<-median(CHD$education,na.rm=TRUE)
+CHD[is.na(education),education:=education_median]
+
+cigsPerDay_median<-median(CHD$cigsPerDay,na.rm=TRUE)
+CHD[is.na(cigsPerDay),cigsPerDay:=cigsPerDay_median]
+
+BPMeds_median<-median(CHD$BPMeds,na.rm=TRUE)
+CHD[is.na(BPMeds),BPMeds:=BPMeds_median]
+
+totChol_median<-median(CHD$totChol,na.rm=TRUE)
+CHD[is.na(totChol),totChol:=totChol_median]
+
+glucose_median<-median(CHD$glucose,na.rm=TRUE)
+CHD[is.na(glucose),glucose:=glucose_median]
+
+heartRate_median<-median(CHD$heartRate,na.rm=TRUE)
+CHD[is.na(heartRate),heartRate:=heartRate_median]
+
+BMI_median<-median(CHD$BMI,na.rm=TRUE)
+CHD[is.na(BMI),BMI:=BMI_median]
+```
+
+###
+```{r}
 colnames(CHD)[1] <- 'is_male'
 ```
-## EDA
+
+
+## III.EDA
+### 1. Distribution of Ten Year Risk of CHD
 ```{r}
 count1 <- length(which(CHD$TenYearCHD == 1))
 count1
@@ -48,10 +88,8 @@ ggplot(data = CHD, aes(x = factor(TenYearCHD),
     ggtitle("Distribution of Ten Year Risk of CHD") +
     common_theme
 ```
-```{r}
-#summary(CHD)
-sapply(CHD, class)
-```
+
+### 2. Distribution of Percentage of CHD with Age
 ```{r}
 CHD$agec <- 
   cut(CHD$age, breaks = c(30,35,40,45,50,55,60,65,70),
@@ -73,7 +111,7 @@ common_theme
 
 
 
-
+### 3. Histogram of CHD with age and gender
 ```{r}
 #cbPalette <- c("#999999", "#E69F00", "#56B4E9", "#009E73", #"#F0E442", "#0072B2", "#D55E00", "#CC79A7")
 CHD_1 <- CHD[ CHD$TenYearCHD=='1',]
@@ -86,10 +124,13 @@ ggplot(data=CHD_1,aes(age,fill=is_male))+
   ggtitle("Distribution of CHD with age and gender")+
   common_theme
 ```
+
+### 4. Probability of disease in smokers
 ```{r}
 d2 <- CHD %>% group_by(currentSmoker) %>% summarise(perc = mean(TenYearCHD=='1'))
 d2
 ```
+### 5. Line Chart of Percentage of CHD with Age and Gender
 ```{r}
 d3 <- CHD %>% group_by(agec,factor(is_male)) %>% summarise(perc = mean(TenYearCHD=='1'))
 d3
@@ -101,13 +142,84 @@ ggtitle("Distribution of Percentage of CHD with Age and Gender")+
 common_theme
 ```
 
+### 6. Pairwise Correlation Analysis
 ```{r}
 a <- CHD[,c(1,3,5,7,9,11,13,15)]
 pairs(a, col = "coral",main = "Pairwise Correlation Analysis")
 ```
 
+### 7. ???
 ```{r}
 ggplot(data = CHD, aes(BMI,glucose,color = age)) + geom_point(fill = "blue") 
 ggplot(data = CHD, aes(x = cigsPerDay, color = education)) + geom_histogram(color="black", fill="pink")+labs(x='Ciggarettes per day', y = 'Count of people')
 #+  + geom_vline(aes(intercept=mean(cigsPerDay)), color="blue", linetype="dashed", size=12)
 ```
+### 8. Corelation Heatmap
+```{r}
+CHD<-subset(CHD,select=-c(17))
+cormat <- round(cor(CHD),2)
+melted_cormat <- melt(cormat)
+ggplot(data = melted_cormat, aes(x=Var1, y=Var2, fill=value)) + 
+common_theme+
+geom_tile()+
+scale_fill_gradient2(low = "green", high = "blue",  
+   midpoint = 0, limit = c(-1,1), 
+   name="Correlation")
+```
+
+
+
+
+## IV.Mechine Learning
+
+### 1. Split Data
+```{r}
+set.seed(1)
+CHD_0<-CHD[CHD$TenYearCHD==0]
+dt = sort(sample(nrow(CHD_0), nrow(CHD_0)*.8))
+train_0<-CHD_0[dt,]
+test_0<-CHD_0[-dt,]
+CHD_1<-CHD[CHD$TenYearCHD==1]
+dt = sort(sample(nrow(CHD_1), nrow(CHD_1)*.8))
+train_1<-CHD_1[dt,]
+test_1<-CHD_1[-dt,]
+train<-rbind(train_0, train_1)
+test<-rbind(test_0, test_1)
+```
+
+
+### 2. Lasso Regression
+```{r}
+# Create formula
+formula <- as.formula(TenYearCHD ~ .)
+
+# Training set modeling 
+train.matrix <- model.matrix(formula, train)[, -1]
+train_y <- train$TenYearCHD
+fit <- cv.glmnet(train.matrix, train_y, family = "binomial", alpha = 1, nfolds = 10)
+
+# Create testing matrices
+test.matrix <- model.matrix(formula, test) [, -1]
+```
+```{r}
+coef(fit,s=fit$lambda.min)
+```
+
+```{r}
+# Predicting test data
+test.predictions <- predict(fit, test.matrix, s = fit$lambda.min) 
+predicted.CHD <- ifelse(test.predictions > 0, 1, 0)
+confusionMatrix(as.factor(predicted.CHD), as.factor(test$TenYearCHD), positive = "1")
+c<-roc.curve(as.numeric(test$TenYearCHD), as.numeric(predicted.CHD), curve = TRUE)
+plot(c)
+```
+
+
+
+
+
+
+```{r}
+
+```
+
