@@ -154,7 +154,7 @@ ggplot(data = CHD, aes(BMI,glucose,color = age)) + geom_point(fill = "blue")
 ggplot(data = CHD, aes(x = cigsPerDay, color = education)) + geom_histogram(color="black", fill="pink")+labs(x='Ciggarettes per day', y = 'Count of people')
 #+  + geom_vline(aes(intercept=mean(cigsPerDay)), color="blue", linetype="dashed", size=12)
 ```
-### 8. Corelation Heatmap
+### 8. Correlation Heatmap
 ```{r}
 CHD<-subset(CHD,select=-c(17))
 cormat <- round(cor(CHD),2)
@@ -173,13 +173,22 @@ scale_fill_gradient2(low = "green", high = "blue",
 ## IV.Mechine Learning
 
 ### 1. Split Data
+
+```{r}
+#set.seed(4321)
+#test <- createDataPartition( CHD$TenYearCHD, p = .2, list = FALSE )
+#train <- CHD[ -test, ]
+#test  <- CHD[ test, ]
+```
+
+
 ```{r}
 set.seed(1)
-CHD_0<-CHD[CHD$TenYearCHD==0]
+CHD_0 <- CHD[ CHD$TenYearCHD=='0',]
 dt = sort(sample(nrow(CHD_0), nrow(CHD_0)*.8))
 train_0<-CHD_0[dt,]
 test_0<-CHD_0[-dt,]
-CHD_1<-CHD[CHD$TenYearCHD==1]
+CHD_1 <- CHD[ CHD$TenYearCHD=='1',]
 dt = sort(sample(nrow(CHD_1), nrow(CHD_1)*.8))
 train_1<-CHD_1[dt,]
 test_1<-CHD_1[-dt,]
