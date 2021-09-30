@@ -172,15 +172,7 @@ scale_fill_gradient2(low = "green", high = "blue",
 
 ## IV.Mechine Learning
 
-### 1. Split Data
-
-```{r}
-#set.seed(4321)
-#test <- createDataPartition( CHD$TenYearCHD, p = .2, list = FALSE )
-#train <- CHD[ -test, ]
-#test  <- CHD[ test, ]
-```
-
+### 1. Split Dataset
 
 ```{r}
 set.seed(1)
@@ -197,7 +189,9 @@ test<-rbind(test_0, test_1)
 ```
 
 
-### 2. Lasso Regression
+
+
+### 2. Lasso Classification
 ```{r}
 # Create formula
 formula <- as.formula(TenYearCHD ~ .)
@@ -216,19 +210,33 @@ coef(fit,s=fit$lambda.min)
 
 ```{r}
 # Predicting test data
-test.predictions <- predict(fit, test.matrix, s = fit$lambda.min) 
-predicted.CHD <- ifelse(test.predictions > 0, 1, 0)
+test.predictions <- predict(fit, test.matrix, s = fit$lambda.min, type = "response") 
+predicted.CHD <- ifelse(test.predictions > 0.10, 1, 0)
 confusionMatrix(as.factor(predicted.CHD), as.factor(test$TenYearCHD), positive = "1")
-c<-roc.curve(as.numeric(test$TenYearCHD), as.numeric(predicted.CHD), curve = TRUE)
+c<-roc.curve( as.numeric(predicted.CHD),as.numeric(test$TenYearCHD), curve = TRUE)
 plot(c)
 ```
 
 
-
-
-
-
+### 3. Split dataset again based on the result of Lasso.
 ```{r}
-
+train2<-train
+test2<-test
+train2$education=NULL
+train2$currentSmoker=NULL
+train2$diaBP=NULL
+train2$BMI=NULL
+train2$heartRate=NULL
+test2$education=NULL
+test2$currentSmoker=NULL
+test2$diaBP=NULL
+test2$BMI=NULL
+test2$heartRate=NULL
 ```
+
+### 4.Logistic Classification
+
+
+
+
 
