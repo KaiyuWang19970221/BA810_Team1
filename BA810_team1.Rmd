@@ -1,6 +1,6 @@
 ---
 title: 'Team 1: '
-author: "Kaiyu Wang,Chinar,Urvashi,Chun,,"
+author: "Kaiyu Wang,Chinar,Urvashi,Chun, Ryan Nie"
 output:
   html_document:
     df_print: paged
@@ -150,10 +150,10 @@ a <- CHD[,c(1,3,5,7,9,11,13,15)]
 pairs(a, col = "coral",main = "Pairwise Correlation Analysis")
 ```
 
-### 7. ???
+### 7. Histogram of Cigarettes per Day
 ```{r}
 ggplot(data = CHD, aes(BMI,glucose,color = age)) + geom_point(fill = "blue") 
-ggplot(data = CHD, aes(x = cigsPerDay, color = education)) + geom_histogram(color="black", fill="pink")+labs(x='Ciggarettes per day', y = 'Count of people')
+ggplot(data = CHD, aes(x = cigsPerDay, color = education)) + geom_histogram(color="black", fill="pink")+labs(x='Cigarettes per day', y = 'Count of people')
 #+  + geom_vline(aes(intercept=mean(cigsPerDay)), color="blue", linetype="dashed", size=12)
 ```
 ### 8. Correlation Heatmap
@@ -172,7 +172,7 @@ scale_fill_gradient2(low = "green", high = "blue",
 
 
 
-## IV.Mechine Learning
+## IV.Machine Learning
 
 ### 1. Split Dataset
 
@@ -186,10 +186,24 @@ test<-CHD[-id, ]
 
 ```
 
+### 2a. Linear Regression Classification
+```{r}
+train_y <-train$TenYearCHD
+test_y <- test$TenYearCHD
+train_x <- train[, -16]
+test_x <- test[, -16]
 
+linearModel <- lm(train$TenYearCHD ~ ., train)
+result <- data.table(predict(linearModel, test_x))
+linear_results <- result[,round(V1)]
 
+accuracy_lm <- linear_results + test_y #0 = True negative, #2 = True positive
+accuracy <- 1 - (sum(accuracy_lm == 1)/length(accuracy_lm))
 
-### 2. Lasso Classification
+cat("The linear regression model accuracy is", accuracy)
+```
+
+### 2b. Linear Regression with Lasso Classification
 ```{r}
 # Create formula
 formula <- as.formula(TenYearCHD ~ .)
