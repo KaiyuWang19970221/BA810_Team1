@@ -175,7 +175,6 @@ scale_fill_gradient2(low = "green", high = "blue",
 ## IV.Machine Learning
 
 ### 1. Split Dataset
-
 ```{r}
 library(fastDummies)
 CHD<-dummy_cols(CHD,select_columns=c('is_male','education','currentSmoker','BPMeds','prevalentStroke','prevalentHyp','diabetes','TenYearCHD'),remove_first_dummy=TRUE,remove_selected_columns=TRUE)
@@ -196,7 +195,6 @@ test<-CHD[-id, ]
 ```
 
 ### 2a. Linear Regression Classification
-
 ```{r}
 train_y <-train$TenYearCHD
 test_y <- test$TenYearCHD
@@ -214,7 +212,6 @@ cat("The linear regression model accuracy is", accuracy)
 ```
 
 ### 2b. Linear Regression with Lasso Classification
-
 ```{r}
 # Create formula
 formula <- as.formula(TenYearCHD ~ .)
@@ -249,7 +246,6 @@ cmat <- confusionMatrix(as.factor(predicted.CHD), as.factor(test$TenYearCHD), po
 Fmeasure <- c(Fmeasure,  cmat$byClass[7] )
 }
 
-
 cutoffs[which.max(Fmeasure)]
 #0.15
 
@@ -263,7 +259,6 @@ plot(c)
 ```
 
 ### 3. Logistic Classification 
-
 ```{r}
 #use variables selected by lasso
 coefs <- coef(fit,s=fit$lambda.min)
@@ -331,7 +326,6 @@ plot(c)
 ```
 
 ### 4. KNN - K-Nearest Neighbors 
-
 ```{r}
 set.seed(1)
 #set  10-folds cross validation 
@@ -358,7 +352,6 @@ plot(c)
 ```
 
 ### 5. Random Forest
-
 ```{r}
 set.seed(1)
 #set  10-folds cross validation 
@@ -390,7 +383,6 @@ plot(c)
 ```
 
 ### 6.Decision Trees
-
 ```{r}
 library(rpart)
 library(rpart.plot)
@@ -404,5 +396,3 @@ rpart.plot(fit, extra = 106)
 ```{r}
 predict_unseen <-predict(fit, test, type = 'class')
 ```
-
-
