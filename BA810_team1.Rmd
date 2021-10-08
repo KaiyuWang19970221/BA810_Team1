@@ -1,6 +1,6 @@
 ---
-title: 'Team 1: '
-author: "Kaiyu Wang,Chinar,Urvashi,Chun, Ryan Nie"
+title: 'Team 1: Framingham Heart Study CHD Predictions'
+author: "Kaiyu Wang, Chinar Boolchandani, Urvashi Tripathi, Chun Zhou, Ryan Nie, Zhenyang Gai"
 output:
   html_document:
     df_print: paged
@@ -9,6 +9,7 @@ output:
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
 ```
+
 ## I.Setup
 ```{r}
 #install.packages('readr', dependencies = TRUE, repos='http://cran.rstudio.com/')
@@ -28,7 +29,9 @@ library(randomForest)
 
 CHD <-fread("framingham.csv")
 ```
+
 ## II.Clean Data
+
 ### 1. Summary
 ```{r}
 summary(CHD)
@@ -58,11 +61,10 @@ BMI_median<-median(CHD$BMI,na.rm=TRUE)
 CHD[is.na(BMI),BMI:=BMI_median]
 ```
 
-###
+### 3. Rename Column 1
 ```{r}
 colnames(CHD)[1] <- 'is_male'
 ```
-
 
 ## III.EDA
 ### 1. Distribution of Ten Year Risk of CHD
@@ -72,6 +74,7 @@ count1
 count2 <- length(which(CHD$TenYearCHD == 0))
 count2
 ```
+
 ```{r}
 common_theme <- theme(plot.title = element_text(hjust = 0.5, face = "bold"))
 
@@ -111,9 +114,7 @@ ggtitle("Distribution of Percentage of CHD with Age")+
 common_theme
 ```
 
-
-
-### 3. Histogram of CHD with age and gender
+### 3. Histogram of CHD with Age and Gender
 ```{r}
 #cbPalette <- c("#999999", "#E69F00", "#56B4E9", "#009E73", #"#F0E442", "#0072B2", "#D55E00", "#CC79A7")
 CHD_1 <- CHD[ CHD$TenYearCHD=='1',]
@@ -127,11 +128,12 @@ ggplot(data=CHD_1,aes(age,fill=is_male))+
   common_theme
 ```
 
-### 4. Probability of disease in smokers
+### 4. Probability of Disease in Smokers
 ```{r}
 d2 <- CHD %>% group_by(currentSmoker) %>% summarise(perc = mean(TenYearCHD=='1'))
 d2
 ```
+
 ### 5. Line Chart of Percentage of CHD with Age and Gender
 ```{r}
 d3 <- CHD %>% group_by(agec,factor(is_male)) %>% summarise(perc = mean(TenYearCHD=='1'))
@@ -156,6 +158,7 @@ ggplot(data = CHD, aes(BMI,glucose,color = age)) + geom_point(fill = "blue")
 ggplot(data = CHD, aes(x = cigsPerDay, color = education)) + geom_histogram(color="black", fill="pink")+labs(x='Cigarettes per day', y = 'Count of people')
 #+  + geom_vline(aes(intercept=mean(cigsPerDay)), color="blue", linetype="dashed", size=12)
 ```
+
 ### 8. Correlation Heatmap
 ```{r}
 CHD<-subset(CHD,select=-c(17))
@@ -169,9 +172,6 @@ scale_fill_gradient2(low = "green", high = "blue",
    name="Correlation")
 ```
 
-
-
-
 ## IV.Machine Learning
 
 ### 1. Split Dataset
@@ -180,10 +180,12 @@ scale_fill_gradient2(low = "green", high = "blue",
 library(fastDummies)
 CHD<-dummy_cols(CHD,select_columns=c('is_male','education','currentSmoker','BPMeds','prevalentStroke','prevalentHyp','diabetes','TenYearCHD'),remove_first_dummy=TRUE,remove_selected_columns=TRUE)
 ```
+
 ```{r}
 names(CHD)[15] <- 'TenYearCHD'
 names(CHD)
 ```
+
 ```{r}
 set.seed(1)
 #train-test split ratio 0.8
@@ -191,10 +193,10 @@ id <- createDataPartition(CHD$TenYearCHD, p = 0.8, list = FALSE)
 
 train<-CHD[id, ]
 test<-CHD[-id, ]
-
 ```
 
 ### 2a. Linear Regression Classification
+
 ```{r}
 train_y <-train$TenYearCHD
 test_y <- test$TenYearCHD
@@ -212,6 +214,7 @@ cat("The linear regression model accuracy is", accuracy)
 ```
 
 ### 2b. Linear Regression with Lasso Classification
+
 ```{r}
 # Create formula
 formula <- as.formula(TenYearCHD ~ .)
@@ -220,7 +223,7 @@ formula <- as.formula(TenYearCHD ~ .)
 train.matrix <- model.matrix(formula, train)[, -1]
 train_y <- train$TenYearCHD
 fit <- cv.glmnet(train.matrix, train_y, family = "binomial", alpha = 1, nfolds = 10)
-#plot 
+# plot 
 plot(fit)
 # Create testing matrices
 test.matrix <- model.matrix(formula, test) [, -1]
@@ -259,11 +262,9 @@ c<-roc.curve( as.numeric(predicted.CHD),as.numeric(test$TenYearCHD), curve = TRU
 plot(c)
 ```
 
-
 ### 3. Logistic Classification 
 
 ```{r}
-
 #use variables selected by lasso
 coefs <- coef(fit,s=fit$lambda.min)
 variables <- which(coefs !=0)
@@ -292,7 +293,6 @@ cmat
 cmat$byClass[7]
 c<-roc.curve( as.numeric(predicted.CHD),as.numeric(test$TenYearCHD), curve = TRUE)
 plot(c)
-
 
 #use full data
 fit3 <- glm(TenYearCHD ~ ., data = train, family = binomial(link = "logit"))
@@ -330,10 +330,7 @@ plot(c)
 #all logistic models are similar
 ```
 
-
-
-
-### 4. KNN - k-nearest neighbors 
+### 4. KNN - K-Nearest Neighbors 
 
 ```{r}
 set.seed(1)
@@ -350,9 +347,7 @@ m <- train(factor(TenYearCHD) ~ ., data = train,
 m
 plot(m)
 
-
 test.predictions <- predict(m, test,  type = "prob")[,2]
-
 
 predicted.CHD <- ifelse(test.predictions > cutoffs[which.max(Fmeasure)], 1, 0)
 cmat <- confusionMatrix(as.factor(predicted.CHD), as.factor(test$TenYearCHD), positive = "1")
@@ -360,11 +355,9 @@ cmat
 
 c<-roc.curve( as.numeric(predicted.CHD),as.numeric(test$TenYearCHD), curve = TRUE)
 plot(c)
-
-
 ```
 
-### 5. random forest
+### 5. Random Forest
 
 ```{r}
 set.seed(1)
@@ -385,7 +378,6 @@ plot(m)
 #variable important plot
 plot(varImp(m))
 
-
 test.predictions <- predict(m, test,  type = "prob")[,2]
 
 
@@ -395,11 +387,9 @@ cmat
 
 c<-roc.curve( as.numeric(predicted.CHD),as.numeric(test$TenYearCHD), curve = TRUE)
 plot(c)
-
 ```
 
-
-### 6.decision tree
+### 6.Decision Trees
 
 ```{r}
 library(rpart)
@@ -410,11 +400,9 @@ train$TenYearCHD<-as.factor(train$TenYearCHD)
 fit <- rpart(TenYearCHD~., data = train, method = 'class')
 rpart.plot(fit, extra = 106)
 ```
+
 ```{r}
 predict_unseen <-predict(fit, test, type = 'class')
 ```
-
-
-
 
 
