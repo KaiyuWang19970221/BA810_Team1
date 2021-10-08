@@ -24,7 +24,7 @@ library(PRROC)
 library(lattice)
 library(caret)
 library(e1071)
-library(randomForest) #for random forest
+library(randomForest) 
 
 CHD <-fread("framingham.csv")
 ```
@@ -176,6 +176,14 @@ scale_fill_gradient2(low = "green", high = "blue",
 
 ### 1. Split Dataset
 
+```{r}
+library(fastDummies)
+CHD<-dummy_cols(CHD,select_columns=c('is_male','education','currentSmoker','BPMeds','prevalentStroke','prevalentHyp','diabetes','TenYearCHD'),remove_first_dummy=TRUE,remove_selected_columns=TRUE)
+```
+```{r}
+names(CHD)[15] <- 'TenYearCHD'
+names(CHD)
+```
 ```{r}
 set.seed(1)
 #train-test split ratio 0.8
@@ -389,3 +397,24 @@ c<-roc.curve( as.numeric(predicted.CHD),as.numeric(test$TenYearCHD), curve = TRU
 plot(c)
 
 ```
+
+
+### 6.decision tree
+
+```{r}
+library(rpart)
+library(rpart.plot)
+
+train$TenYearCHD<-as.factor(train$TenYearCHD)
+
+fit <- rpart(TenYearCHD~., data = train, method = 'class')
+rpart.plot(fit, extra = 106)
+```
+```{r}
+predict_unseen <-predict(fit, test, type = 'class')
+```
+
+
+
+
+
