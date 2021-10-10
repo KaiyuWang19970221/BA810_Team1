@@ -120,11 +120,12 @@ ggplot(data = CHD, aes(x = factor(TenYearCHD),
 
 ### 2. Distribution of Percentage of CHD with Age
 ```{r}
-CHD$agec <- 
-  cut(CHD$age, breaks = c(30,35,40,45,50,55,60,65,70),
+CHD_a<-data.frame(CHD)
+CHD_a$agec <- 
+  cut(CHD_a$age, breaks = c(30,35,40,45,50,55,60,65,70),
       labels = c("30-35","35-40","40-45","45-50","50-55","55-60","60-65","65-70"))
   
-d <- CHD %>% group_by(agec) %>% summarise(perc = mean(TenYearCHD=='1'))
+d <- CHD_a %>% group_by(agec) %>% summarise(perc = mean(TenYearCHD=='1'))
 d$perc_r <- round(d$perc,2)*100
 d$perc_r <- interaction(d$perc_r, "%", sep = "")
 d
@@ -160,7 +161,7 @@ d2
 
 ### 5. Line Chart of Percentage of CHD with Age and Gender
 ```{r}
-d3 <- CHD %>% group_by(agec,factor(is_male)) %>% summarise(perc = mean(TenYearCHD=='1'))
+d3 <- CHD_a %>% group_by(agec,factor(is_male)) %>% summarise(perc = mean(TenYearCHD=='1'))
 d3
 ggplot() + 
 geom_line(data=d3,aes(agec, perc,group =`factor(is_male)`,color =`factor(is_male)` ))+
@@ -522,6 +523,11 @@ prediction <- matrix(pred, nrow = nc, ncol = length(pred)/nc) %>%
 t() %>%
 data.frame() %>%
 mutate(label = test_label, max_prob = max.col(., "last")-1)
-table(Prediction = prediction$max_prob, Actual = prediction$label)
 ```
-##Above is the confusion matrix for our XGBoost model
+```{r}
+cmat <- confusionMatrix(as.factor(prediction$max_prob), as.factor(test$TenYearCHD), positive = "1")
+cmat
+
+roc.curve( as.numeric(test$TenYearCHD),as.numeric(prediction$max_prob))
+```
+
