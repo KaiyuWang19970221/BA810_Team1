@@ -245,7 +245,7 @@ scale_fill_gradient2(low = "green", high = "blue",
 
 # correlation plot with significant features
 ```{r}
-cor_heart <- cor(CHD2[,8:15])
+cor_heart <- cor(CHD2[,c(8,10:15)])
 cor_heart
 corrplot(cor_heart,method = 'square',type='upper')
 ```
@@ -259,8 +259,15 @@ CHD<-dummy_cols(CHD,select_columns=c('is_male','education','currentSmoker','BPMe
 ```
 
 ```{r}
-names(CHD)[15] <- 'TenYearCHD'
+names(CHD)[names(CHD)=='TenYearCHD_1'] <- 'TenYearCHD'
 names(CHD)
+```
+
+```{r}
+# we decided to do oversampling on our imbalanced data.
+library(ROSE)
+CHD <- ovun.sample(TenYearCHD ~ ., data = CHD, method = "both", p=0.5,N=2000, seed = 1)$data
+table(CHD$TenYearCHD)
 ```
 
 ```{r}
@@ -332,8 +339,7 @@ cmat <- confusionMatrix(as.factor(predicted.CHD), as.factor(test$TenYearCHD), po
 cmat
 #F1 score
 cmat$byClass[7]
-c<-roc.curve( as.numeric(predicted.CHD),as.numeric(test$TenYearCHD), curve = TRUE)
-plot(c)
+roc.curve( as.numeric(test$TenYearCHD),as.numeric(predicted.CHD))
 ```
 
 ### 3. Logistic Classification 
@@ -364,8 +370,7 @@ cmat <- confusionMatrix(as.factor(predicted.CHD), as.factor(test$TenYearCHD), po
 cmat
 #F1 score
 cmat$byClass[7]
-c<-roc.curve( as.numeric(predicted.CHD),as.numeric(test$TenYearCHD), curve = TRUE)
-plot(c)
+roc.curve( as.numeric(test$TenYearCHD),as.numeric(predicted.CHD))
 
 #use full data
 fit3 <- glm(TenYearCHD ~ ., data = train, family = binomial(link = "logit"))
@@ -381,8 +386,7 @@ cmat <- confusionMatrix(as.factor(predicted.CHD), as.factor(test$TenYearCHD), po
 cmat
 #F1 score
 cmat$byClass[7]
-c<-roc.curve( as.numeric(predicted.CHD),as.numeric(test$TenYearCHD), curve = TRUE)
-plot(c)
+roc.curve( as.numeric(test$TenYearCHD),as.numeric(predicted.CHD))
 
 #use  backward selection with AIC criterion
 
@@ -397,8 +401,7 @@ predicted.CHD <- ifelse(test.predictions > cutoffs[which.max(Fmeasure)], 1, 0)
 cmat <- confusionMatrix(as.factor(predicted.CHD), as.factor(test$TenYearCHD), positive = "1")
 cmat
 
-c<-roc.curve( as.numeric(predicted.CHD),as.numeric(test$TenYearCHD), curve = TRUE)
-plot(c)
+roc.curve( as.numeric(test$TenYearCHD),as.numeric(predicted.CHD))
 
 #all logistic models are similar
 ```
@@ -425,8 +428,7 @@ predicted.CHD <- ifelse(test.predictions > cutoffs[which.max(Fmeasure)], 1, 0)
 cmat <- confusionMatrix(as.factor(predicted.CHD), as.factor(test$TenYearCHD), positive = "1")
 cmat
 
-c<-roc.curve( as.numeric(predicted.CHD),as.numeric(test$TenYearCHD), curve = TRUE)
-plot(c)
+roc.curve( as.numeric(test$TenYearCHD),as.numeric(predicted.CHD))
 ```
 
 ### 5. Random Forest
@@ -456,21 +458,27 @@ predicted.CHD <- ifelse(test.predictions > cutoffs[which.max(Fmeasure)], 1, 0)
 cmat <- confusionMatrix(as.factor(predicted.CHD), as.factor(test$TenYearCHD), positive = "1")
 cmat
 
-c<-roc.curve( as.numeric(predicted.CHD),as.numeric(test$TenYearCHD), curve = TRUE)
-plot(c)
+roc.curve( as.numeric(test$TenYearCHD),as.numeric(predicted.CHD))
 ```
 
-### 6.Decision Trees
+
+### 6.decision tree
+
 ```{r}
 library(rpart)
 library(rpart.plot)
 
 train$TenYearCHD<-as.factor(train$TenYearCHD)
 
-fit <- rpart(TenYearCHD~., data = train, method = 'class')
-rpart.plot(fit, extra = 106)
+fit5 <- rpart(TenYearCHD~., data = train, method = 'class')
+rpart.plot(fit5, extra = 106)
 ```
-
 ```{r}
-predict_unseen <-predict(fit, test, type = 'class')
+predicted.CHD <-predict(fit5, test, type = 'class')
+```
+```{r}
+cmat <- confusionMatrix(as.factor(predicted.CHD), as.factor(test$TenYearCHD), positive = "1")
+cmat
+
+roc.curve( as.numeric(test$TenYearCHD),as.numeric(predicted.CHD))
 ```
