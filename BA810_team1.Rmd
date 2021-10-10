@@ -531,3 +531,23 @@ cmat
 roc.curve( as.numeric(test$TenYearCHD),as.numeric(prediction$max_prob))
 ```
 
+
+### 8. Ridge
+```{r}
+# Create formula
+formula <- as.formula(TenYearCHD ~ .)
+
+# Training set modeling 
+train.matrix <- model.matrix(formula, train)[, -1]
+train_y <- train$TenYearCHD
+fit <- cv.glmnet(train.matrix, train_y, family = "binomial", alpha = 0, nfolds = 10)
+```
+```{r}
+test.matrix <- model.matrix(formula, test) [, -1]
+test.predictions <- predict(fit, test.matrix, s = fit$lambda.min, type = "response") 
+predicted.CHD <- ifelse(test.predictions > cutoffs[which.max(Fmeasure)], 1, 0)
+cmat <- confusionMatrix(as.factor(predicted.CHD), as.factor(test$TenYearCHD), positive = "1")
+cmat
+roc.curve( as.numeric(test$TenYearCHD),as.numeric(predicted.CHD))
+```
+
