@@ -27,6 +27,8 @@ library(caret)
 library(e1071)
 library(randomForest) 
 library(corrplot)
+library(xgboost)
+library(stringr)
 
 CHD <-fread("framingham.csv")
 ```
@@ -470,3 +472,56 @@ cmat
 
 roc.curve( as.numeric(test$TenYearCHD),as.numeric(predicted.CHD))
 ```
+
+### 7. Extreme Gradient Boostig Model 
+
+```{r}
+#Creating a matrix, one-hot encoding for factor variable
+training <- sparse.model.matrix(TenYearCHD ~ .-1, data = train)     #independent variable
+head(training)
+train_label <-  as.numeric(levels(train$TenYearCHD))[train$TenYearCHD] #dependent variable
+train_matrix <- xgb.DMatrix(data = as.matrix(training), label = train_label)
+testing <- sparse.model.matrix(TenYearCHD~.-1, data = test)
+test_label <- test[,"TenYearCHD"]
+test_matrix <- xgb.DMatrix(data = as.matrix(testing), label = test_label)
+```
+
+```{r}
+#Defining parameters
+nc <- length(unique(train_label))
+xgb_params <- list("objective" = "multi:softprob",
+                   "eval_metric" = "mlogloss",
+                   "num_class" = nc)
+watchlist <- list(train = train_matrix, test = test_matrix)
+```
+```{r}
+
+#XGBoost Model
+set.seed(333)
+best_model <- xgb.train(params = xgb_params,
+                       data = train_matrix,
+                       nrounds = 100,
+                       watchlist = watchlist,
+                       eta = 0.001,
+                       max.depth = 3,
+                       gamma = 0,
+                       subsample = 1,
+                       colsample_bytree = 1,
+                       missing = NA)
+```
+
+```{r}
+e <- data.frame(best_model$evaluation_log)
+plot(e$iter, e$train_mlogloss, col = 'blue')
+lines(e$iter, e$test_mlogloss, col = 'red')
+```
+
+```{r}
+pred <- predict(best_model, newdata = test_matrix)
+prediction <- matrix(pred, nrow = nc, ncol = length(pred)/nc) %>%
+t() %>%
+data.frame() %>%
+mutate(label = test_label, max_prob = max.col(., "last")-1)
+table(Prediction = prediction$max_prob, Actual = prediction$label)
+```
+##Above is the confusion matrix for our XGBoost model
