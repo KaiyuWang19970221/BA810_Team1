@@ -228,22 +228,7 @@ ggplot(CHD2,
   labs(title = "BP by age related to TenYearCHD")
 ```
 
-### 13. Correlation
-
-#Heatmap
-```{r}
-CHD<-subset(CHD,select=-c(17))
-cormat <- round(cor(CHD),2)
-melted_cormat <- melt(cormat)
-ggplot(data = melted_cormat, aes(x=Var1, y=Var2, fill=value)) + 
-common_theme+
-geom_tile()+
-scale_fill_gradient2(low = "green", high = "blue",  
-   midpoint = 0, limit = c(-1,1), 
-   name="Correlation")
-```
-
-# correlation plot with significant features
+### 13. Correlation plot with significant features
 ```{r}
 cor_heart <- cor(CHD2[,c(8,10:15)])
 cor_heart
@@ -255,6 +240,7 @@ corrplot(cor_heart,method = 'square',type='upper')
 ### 1. Split Dataset
 ```{r}
 library(fastDummies)
+CHD_o<-data.frame(CHD)
 CHD<-dummy_cols(CHD,select_columns=c('is_male','education','currentSmoker','BPMeds','prevalentStroke','prevalentHyp','diabetes','TenYearCHD'),remove_first_dummy=TRUE,remove_selected_columns=TRUE)
 ```
 
@@ -267,26 +253,28 @@ names(CHD)
 # we decided to do oversampling on our imbalanced data.
 library(ROSE)
 CHD <- ovun.sample(TenYearCHD ~ ., data = CHD, method = "both", p=0.5,N=2000, seed = 1)$data
-table(CHD$TenYearCHD)
+CHD_o<-ovun.sample(TenYearCHD ~ ., data = CHD_o, method = "both", p=0.5,N=2000, seed = 1)$data
 ```
 
 ```{r}
 set.seed(1)
 #train-test split ratio 0.8
 id <- createDataPartition(CHD$TenYearCHD, p = 0.8, list = FALSE)
-
 train<-CHD[id, ]
 test<-CHD[-id, ]
+id_o <- createDataPartition(CHD_o$TenYearCHD, p = 0.8, list = FALSE)
+train_o<-CHD_o[id_o, ]
+test_o<-CHD_o[-id_o, ]
 ```
 
 ### 2a. Linear Regression Classification
 ```{r}
-train_y <-train$TenYearCHD
-test_y <- test$TenYearCHD
-train_x <- train[, -16]
-test_x <- test[, -16]
+train_y <-train_o$TenYearCHD
+test_y <- test_o$TenYearCHD
+train_x <- train_o[, -16]
+test_x <- test_o[, -16]
 
-linearModel <- lm(train$TenYearCHD ~ ., train)
+linearModel <- lm(train_o$TenYearCHD ~ ., train_o)
 result <- data.table(predict(linearModel, test_x))
 linear_results <- result[,round(V1)]
 
