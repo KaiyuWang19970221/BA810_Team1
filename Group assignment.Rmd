@@ -1,0 +1,73 @@
+---
+title: "810 group assignment"
+author: "Urvashi Tripathi"
+date: "10/9/2021"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## R Markdown
+
+This is an R Markdown document. Markdown is a simple formatting syntax for authoring HTML, PDF, and MS Word documents. For more details on using R Markdown see <http://rmarkdown.rstudio.com>.
+
+```{r}
+library(ggplot2)
+install.packages("ggplot2")
+library(data.table)
+
+dd <- fread("~/BU/Course material/Fall/810 sup ML/framingham.csv")
+dd
+library(ggplot2)
+```
+
+
+
+
+
+```{r}
+ggplot(data = dd, aes(BMI,glucose,color = age)) + geom_point(fill = "blue") 
+
+ggplot(data = dd, aes(x = cigsPerDay, color = education)) + geom_histogram(color="black", fill="pink")+labs(x='Ciggarettes per day', y = 'Count of people')
+```
+
+```{r}
+chooseCRANmirror(graphics=FALSE, ind=1)
+knitr::opts_chunk$set(echo = TRUE)
+install.packages("magrittr")
+install.packages("dplyr")   
+library(magrittr) 
+library(dplyr)
+library(ggplot2)
+install.packages("ggplot2")
+library(data.table)
+dd %>% mutate(TenYearCHD = as.numeric(TenYearCHD)-1) %>%
+        ggplot(aes(x=sysBP, y=TenYearCHD)) + 
+        geom_jitter(height = .05, aes(color = factor(TenYearCHD))) + 
+        geom_smooth(method = "lm",  se = FALSE) +
+        ylab("Probality of TenYearCHD=1") + xlab("Systolic BP")
+```
+
+```
+```{r}
+
+```{r}
+
+library(ggplot2)
+install.packages("ggplot2")
+library(data.table)
+ggplot(data=dd, aes(x = BMI, y = diabetes, hue = TenYearCHD)) +
+  geom_violin(data = dd)
+ geom_histogram(binwidth=1,position="identity", alpha=0.5) 
+ # ggtitle("Body Mass Index (kg/m2)") +
+ # labs(y="Density", x="Body Mass Index (kg/m2)") +
+ # scale_color_grey()+scale_fill_grey() +
+ # theme(axis.title=element_text(size=9),
+ # plot.title=element_text(size=10))
+
+```
+ 
+
+
