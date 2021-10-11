@@ -10,9 +10,8 @@ output:
 knitr::opts_chunk$set(echo = TRUE)
 ```
 
-## I.Setup
-```{r}
-#install.packages('readr', dependencies = TRUE, repos='http://cran.rstudio.com/')
+## I. Setup
+```{r message = FALSE, warning = FALSE}
 library(readr)
 library(data.table)
 library(ggplot2)
@@ -33,7 +32,7 @@ library(stringr)
 CHD <-fread("framingham.csv")
 ```
 
-## II.Clean Data
+## II. Clean Data
 
 ### 1. Summary
 Summary statistics for all features.
@@ -74,7 +73,7 @@ CHD[is.na(BMI),BMI:=BMI_median]
 colnames(CHD)[1] <- 'is_male'
 ```
 
-## III.Descriptive Data Analysis
+## III. Descriptive Data Analysis
 
 ### Data Transformation for better data visualization
 1. Convert categorical data to dummy variables.
@@ -282,7 +281,7 @@ cor_heart
 corrplot(cor_heart,method = 'square',type='upper')
 ```
 
-## IV.Machine Learning
+## IV. Machine Learning
 
 ### 1. Split Dataset
 
@@ -334,7 +333,7 @@ test_o<-CHD_o[-id_o, ]
 ### 2a. Linear Regression Classification
 
 ```{r}
-train_y <-train_o$TenYearCHD
+train_y <- train_o$TenYearCHD
 test_y <- test_o$TenYearCHD
 train_x <- train_o[, -16]
 test_x <- test_o[, -16]
@@ -352,7 +351,7 @@ cmat <- confusionMatrix(as.factor(linear_results), as.factor(test_y), positive =
 cmat
 
 #F1 score
-roc.curve( as.numeric(test_y),as.numeric(linear_results))
+roc.curve(as.numeric(test_y),as.numeric(linear_results))
 ```
 
 ### 2b. Linear Regression with Lasso Classification
@@ -374,7 +373,7 @@ test.matrix <- model.matrix(formula, test) [, -1]
 ```
 
 ```{r}
-coef(fit,s=fit$lambda.min)
+coef(fit, s=fit$lambda.min)
 ```
 
 ```{r}
@@ -403,7 +402,7 @@ cmat
 
 #F1 score
 cmat$byClass[7]
-roc.curve( as.numeric(test$TenYearCHD),as.numeric(predicted.CHD))
+roc.curve(as.numeric(test$TenYearCHD), as.numeric(predicted.CHD))
 ```
 
 ### 3. Linear Regression with Ridge Classification
@@ -425,7 +424,7 @@ predicted.CHD <- ifelse(test.predictions > cutoffs[which.max(Fmeasure)], 1, 0)
 cmat <- confusionMatrix(as.factor(predicted.CHD), as.factor(test$TenYearCHD), positive = "1")
 cmat
 
-roc.curve( as.numeric(test$TenYearCHD),as.numeric(predicted.CHD))
+roc.curve(as.numeric(test$TenYearCHD), as.numeric(predicted.CHD))
 ```
 
 ### 4. Logistic Classification 
@@ -438,8 +437,8 @@ variables <- which(coefs !=0)
 selectvariables <- names(coefs[variables,])[-1]
 selectvariables
 
-train2<-train.matrix[,selectvariables]
-test2<-test.matrix[,selectvariables]
+train2 <- train.matrix[,selectvariables]
+test2 <- test.matrix[,selectvariables]
 
 newtrain <- data.frame(train2, TenYearCHD = train$TenYearCHD)
 newtest <- data.frame(test2, TenYearCHD = test$TenYearCHD)
@@ -451,14 +450,13 @@ summary(fit2)
 
 test.predictions <- predict(fit2, newtest,  type = "response") 
 
-
 predicted.CHD <- ifelse(test.predictions > cutoffs[which.max(Fmeasure)], 1, 0)
 cmat <- confusionMatrix(as.factor(predicted.CHD), as.factor(test$TenYearCHD), positive = "1")
 cmat
 
 #F1 score
 cmat$byClass[7]
-roc.curve( as.numeric(test$TenYearCHD),as.numeric(predicted.CHD))
+roc.curve(as.numeric(test$TenYearCHD), as.numeric(predicted.CHD))
 
 #use full data
 fit3 <- glm(TenYearCHD ~ ., data = train, family = binomial(link = "logit"))
@@ -472,9 +470,10 @@ test.predictions <- predict(fit3, test,  type = "response")
 predicted.CHD <- ifelse(test.predictions > cutoffs[which.max(Fmeasure)], 1, 0)
 cmat <- confusionMatrix(as.factor(predicted.CHD), as.factor(test$TenYearCHD), positive = "1")
 cmat
+
 #F1 score
 cmat$byClass[7]
-roc.curve( as.numeric(test$TenYearCHD),as.numeric(predicted.CHD))
+roc.curve(as.numeric(test$TenYearCHD), as.numeric(predicted.CHD))
 
 #use backward selection with AIC criterion
 
@@ -482,13 +481,13 @@ fit4 <- step(fit3,trace = F)
 summary(fit4)
 #Predicting test data
 
-test.predictions <- predict(fit4, test,  type = "response") 
+test.predictions <- predict(fit4, test, type = "response") 
 
 predicted.CHD <- ifelse(test.predictions > cutoffs[which.max(Fmeasure)], 1, 0)
 cmat <- confusionMatrix(as.factor(predicted.CHD), as.factor(test$TenYearCHD), positive = "1")
 cmat
 
-roc.curve( as.numeric(test$TenYearCHD),as.numeric(predicted.CHD))
+roc.curve(as.numeric(test$TenYearCHD), as.numeric(predicted.CHD))
 
 #all logistic models are similar
 ```
@@ -497,7 +496,7 @@ roc.curve( as.numeric(test$TenYearCHD),as.numeric(predicted.CHD))
 
 ```{r}
 set.seed(1)
-#set  10-folds cross validation 
+#set 10-folds cross validation 
 ctrl <- trainControl(method = "cv", 
                      number = 10)
 #KNN for k-nearest neighbors 
@@ -516,7 +515,7 @@ predicted.CHD <- ifelse(test.predictions > cutoffs[which.max(Fmeasure)], 1, 0)
 cmat <- confusionMatrix(as.factor(predicted.CHD), as.factor(test$TenYearCHD), positive = "1")
 cmat
 
-roc.curve( as.numeric(test$TenYearCHD),as.numeric(predicted.CHD))
+roc.curve(as.numeric(test$TenYearCHD), as.numeric(predicted.CHD))
 ```
 
 ### 6. Random Forest
@@ -545,7 +544,7 @@ predicted.CHD <- ifelse(test.predictions > cutoffs[which.max(Fmeasure)], 1, 0)
 cmat <- confusionMatrix(as.factor(predicted.CHD), as.factor(test$TenYearCHD), positive = "1")
 cmat
 
-roc.curve(as.numeric(test$TenYearCHD),as.numeric(predicted.CHD))
+roc.curve(as.numeric(test$TenYearCHD), as.numeric(predicted.CHD))
 ```
 
 ### 7. Decision Tree
@@ -554,21 +553,21 @@ roc.curve(as.numeric(test$TenYearCHD),as.numeric(predicted.CHD))
 library(rpart)
 library(rpart.plot)
 
-train$TenYearCHD<-as.factor(train$TenYearCHD)
+train$TenYearCHD <- as.factor(train$TenYearCHD)
 
 fit5 <- rpart(TenYearCHD~., data = train, method = 'class')
 rpart.plot(fit5, extra = 106)
 ```
 
 ```{r}
-predicted.CHD <-predict(fit5, test, type = 'class')
+predicted.CHD <- predict(fit5, test, type = 'class')
 ```
 
 ```{r}
 cmat <- confusionMatrix(as.factor(predicted.CHD), as.factor(test$TenYearCHD), positive = "1")
 cmat
 
-roc.curve( as.numeric(test$TenYearCHD),as.numeric(predicted.CHD))
+roc.curve(as.numeric(test$TenYearCHD), as.numeric(predicted.CHD))
 ```
 
 ### 8. Extreme Gradient Boosting Model 
@@ -576,9 +575,9 @@ roc.curve( as.numeric(test$TenYearCHD),as.numeric(predicted.CHD))
 ```{r}
 #Creating a matrix, one-hot encoding for factor variable
 training <- sparse.model.matrix(TenYearCHD ~ .-1, data = train)     #independent variable
-head(training)
 train_label <-  as.numeric(levels(train$TenYearCHD))[train$TenYearCHD] #dependent variable
 train_matrix <- xgb.DMatrix(data = as.matrix(training), label = train_label)
+
 testing <- sparse.model.matrix(TenYearCHD~.-1, data = test)
 test_label <- test[,"TenYearCHD"]
 test_matrix <- xgb.DMatrix(data = as.matrix(testing), label = test_label)
@@ -626,6 +625,5 @@ mutate(label = test_label, max_prob = max.col(., "last")-1)
 cmat <- confusionMatrix(as.factor(prediction$max_prob), as.factor(test$TenYearCHD), positive = "1")
 cmat
 
-roc.curve( as.numeric(test$TenYearCHD),as.numeric(prediction$max_prob))
+roc.curve(as.numeric(test$TenYearCHD), as.numeric(prediction$max_prob))
 ```
-
