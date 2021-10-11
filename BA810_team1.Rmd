@@ -36,11 +36,15 @@ CHD <-fread("framingham.csv")
 ## II.Clean Data
 
 ### 1. Summary
+Summary statistics for all features.
+
 ```{r}
 summary(CHD)
 ```
 
 ### 2. Replace NA
+Missing data is replaced with median since all of them all numerical medical data.
+
 ```{r}
 education_median<-median(CHD$education,na.rm=TRUE)
 CHD[is.na(education),education:=education_median]
@@ -72,6 +76,9 @@ colnames(CHD)[1] <- 'is_male'
 ## III.Descriptive Data Analysis
 
 ### Data Transformation for better data visualization
+1. Convert categorical data to dummy variables.
+2. Create new columns as feature engineering.
+3. Drop unnecessary columns.
 ```{r}
 CHD2 <- CHD %>%
   mutate(is_male = if_else (is_male ==1,"Male","Female"),
@@ -92,6 +99,7 @@ CHD2$diaBP = NULL
 ```
 
 ### 1. Distribution of Ten Year Risk of CHD
+Labeled data shows only 15% risk of ten year CHD.
 ```{r}
 count1 <- length(which(CHD$TenYearCHD == 1))
 count1
@@ -119,6 +127,7 @@ ggplot(data = CHD, aes(x = factor(TenYearCHD),
 ```
 
 ### 2. Distribution of Percentage of CHD with Age
+As age increases, the percentage of CHD increases.
 ```{r}
 CHD_a<-data.frame(CHD)
 CHD_a$agec <- 
@@ -140,6 +149,7 @@ common_theme
 ```
 
 ### 3. Histogram of CHD with Age and Gender
+Males are more likely to have CHD than females at earlier ages.
 ```{r}
 #cbPalette <- c("#999999", "#E69F00", "#56B4E9", "#009E73", #"#F0E442", "#0072B2", "#D55E00", "#CC79A7")
 CHD_1 <- CHD[ CHD$TenYearCHD=='1',]
@@ -154,6 +164,7 @@ ggplot(data=CHD_1,aes(age,fill=is_male))+
 ```
 
 ### 4. Probability of Disease in Smokers
+Smoking or not doesn't have significant impact on risk of ten year CHD.
 ```{r}
 d2 <- CHD %>% group_by(currentSmoker) %>% summarise(perc = mean(TenYearCHD=='1'))
 d2
@@ -338,7 +349,26 @@ cmat$byClass[7]
 roc.curve( as.numeric(test$TenYearCHD),as.numeric(predicted.CHD))
 ```
 
-### 3. Logistic Classification 
+### 3. Ridge
+```{r}
+# Create formula
+formula <- as.formula(TenYearCHD ~ .)
+
+# Training set modeling 
+train.matrix <- model.matrix(formula, train)[, -1]
+train_y <- train$TenYearCHD
+fit <- cv.glmnet(train.matrix, train_y, family = "binomial", alpha = 0, nfolds = 10)
+```
+```{r}
+test.matrix <- model.matrix(formula, test) [, -1]
+test.predictions <- predict(fit, test.matrix, s = fit$lambda.min, type = "response") 
+predicted.CHD <- ifelse(test.predictions > cutoffs[which.max(Fmeasure)], 1, 0)
+cmat <- confusionMatrix(as.factor(predicted.CHD), as.factor(test$TenYearCHD), positive = "1")
+cmat
+roc.curve( as.numeric(test$TenYearCHD),as.numeric(predicted.CHD))
+```
+
+### 4. Logistic Classification 
 ```{r}
 #use variables selected by lasso
 coefs <- coef(fit,s=fit$lambda.min)
@@ -402,7 +432,7 @@ roc.curve( as.numeric(test$TenYearCHD),as.numeric(predicted.CHD))
 #all logistic models are similar
 ```
 
-### 4. KNN - K-Nearest Neighbors 
+### 5. KNN - K-Nearest Neighbors 
 ```{r}
 set.seed(1)
 #set  10-folds cross validation 
@@ -427,7 +457,7 @@ cmat
 roc.curve( as.numeric(test$TenYearCHD),as.numeric(predicted.CHD))
 ```
 
-### 5. Random Forest
+### 6. Random Forest
 ```{r}
 set.seed(1)
 #set  10-folds cross validation 
@@ -458,7 +488,7 @@ roc.curve( as.numeric(test$TenYearCHD),as.numeric(predicted.CHD))
 ```
 
 
-### 6.decision tree
+### 7.decision tree
 
 ```{r}
 library(rpart)
@@ -479,7 +509,7 @@ cmat
 roc.curve( as.numeric(test$TenYearCHD),as.numeric(predicted.CHD))
 ```
 
-### 7. Extreme Gradient Boostig Model 
+### 8. Extreme Gradient Boostig Model 
 
 ```{r}
 #Creating a matrix, one-hot encoding for factor variable
@@ -537,22 +567,4 @@ roc.curve( as.numeric(test$TenYearCHD),as.numeric(prediction$max_prob))
 ```
 
 
-### 8. Ridge
-```{r}
-# Create formula
-formula <- as.formula(TenYearCHD ~ .)
-
-# Training set modeling 
-train.matrix <- model.matrix(formula, train)[, -1]
-train_y <- train$TenYearCHD
-fit <- cv.glmnet(train.matrix, train_y, family = "binomial", alpha = 0, nfolds = 10)
-```
-```{r}
-test.matrix <- model.matrix(formula, test) [, -1]
-test.predictions <- predict(fit, test.matrix, s = fit$lambda.min, type = "response") 
-predicted.CHD <- ifelse(test.predictions > cutoffs[which.max(Fmeasure)], 1, 0)
-cmat <- confusionMatrix(as.factor(predicted.CHD), as.factor(test$TenYearCHD), positive = "1")
-cmat
-roc.curve( as.numeric(test$TenYearCHD),as.numeric(predicted.CHD))
-```
 
