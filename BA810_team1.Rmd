@@ -285,6 +285,11 @@ accuracy_lm <- linear_results + test_y #0 = True negative, #2 = True positive
 accuracy <- 1 - (sum(accuracy_lm == 1)/length(accuracy_lm))
 
 cat("The linear regression model accuracy is", accuracy)
+
+cmat <- confusionMatrix(as.factor(linear_results), as.factor(test_y), positive = "1")
+cmat
+#F1 score
+roc.curve( as.numeric(test_y),as.numeric(linear_results))
 ```
 
 ### 2b. Linear Regression with Lasso Classification
