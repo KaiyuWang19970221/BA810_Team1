@@ -69,6 +69,7 @@ CHD[is.na(BMI),BMI:=BMI_median]
 ```
 
 ### 3. Rename Column male
+
 ```{r}
 colnames(CHD)[1] <- 'is_male'
 ```
@@ -79,6 +80,7 @@ colnames(CHD)[1] <- 'is_male'
 1. Convert categorical data to dummy variables.
 2. Create new columns as feature engineering.
 3. Drop unnecessary columns.
+
 ```{r}
 CHD2 <- CHD %>%
   mutate(is_male = if_else (is_male ==1,"Male","Female"),
@@ -91,8 +93,10 @@ CHD2 <- CHD %>%
          education = as.factor(education)) %>%
   mutate_if(is.character,as.factor) %>%
   dplyr::select(TenYearCHD,is_male,currentSmoker,BPMeds,prevalentStroke,prevalentHyp,diabetes,everything())
+  
 #new columns creation
 CHD2$BP <- CHD2$sysBP + CHD2$diaBP
+
 #dropping cols
 CHD2$sysBP = NULL
 CHD2$diaBP = NULL
@@ -100,11 +104,12 @@ CHD2$diaBP = NULL
 
 ### 1. Distribution of Ten Year Risk of CHD
 Labeled data shows only 15% risk of ten year CHD.
+
 ```{r}
 count1 <- length(which(CHD$TenYearCHD == 1))
-count1
+cat(count1, "people have a 10 year risk of CHD\n")
 count2 <- length(which(CHD$TenYearCHD == 0))
-count2
+cat(count2, "people DO NOT have a 10 year risk of CHD")
 ```
 
 ```{r}
@@ -119,8 +124,8 @@ ggplot(data = CHD, aes(x = factor(TenYearCHD),
               position = position_dodge(.9), 
               vjust = -0.5, 
               size =3) + 
-    scale_x_discrete(labels = c("no risk", "risk"))+
-    scale_y_continuous(labels = scales::percent)+
+    scale_x_discrete(labels = c("no risk", "risk")) +
+    scale_y_continuous(labels = scales::percent) +
     labs(x = 'Disease Prevalence', y = 'Percentage',fill='TenYearCHD') +
     ggtitle("Distribution of Ten Year Risk of CHD") +
     common_theme
@@ -128,6 +133,7 @@ ggplot(data = CHD, aes(x = factor(TenYearCHD),
 
 ### 2. Distribution of Percentage of CHD with Age
 As age increases, the percentage of CHD increases.
+
 ```{r}
 CHD_a<-data.frame(CHD)
 CHD_a$agec <- 
@@ -139,90 +145,114 @@ d$perc_r <- round(d$perc,2)*100
 d$perc_r <- interaction(d$perc_r, "%", sep = "")
 d
 
-ggplot(d,aes(x=agec,y=perc)) + 
-geom_col()+
-scale_y_continuous(labels=scales::percent)+
-geom_text(aes(label = perc_r), vjust = -0.5)+
-labs(x='Age Group',y='Percentage')+
-ggtitle("Distribution of Percentage of CHD with Age")+
-common_theme
+ggplot(d, aes(x = agec, y = perc)) +
+  geom_col() +
+  scale_y_continuous(labels = scales::percent) +
+  geom_text(aes(label = perc_r), vjust = -0.5) +
+  labs(x = 'Age Group', y = 'Percentage') +
+  ggtitle("Distribution of Percentage of CHD with Age") +
+  common_theme
 ```
 
 ### 3. Histogram of CHD with Age and Gender
 Males are more likely to have CHD than females at earlier ages.
+
 ```{r}
-#cbPalette <- c("#999999", "#E69F00", "#56B4E9", "#009E73", #"#F0E442", "#0072B2", "#D55E00", "#CC79A7")
 CHD_1 <- CHD[ CHD$TenYearCHD=='1',]
 CHD_1$is_male[CHD_1$is_male == 0] <- "female"
 CHD_1$is_male[CHD_1$is_male == 1] <- "male"
-ggplot(data=CHD_1,aes(age,fill=is_male))+
-  geom_bar(position = position_dodge(width = 0.5))+
-#  scale_fill_brewer(palette=cbPalette)+
-  labs(x = "Age in years",y = "CHD count")+
-  ggtitle("Distribution of CHD with age and gender")+
+ggplot(data=CHD_1, aes(age,fill=is_male)) +
+  geom_bar(position = position_dodge(width = 0.5)) +
+  labs(x = "Age in years", y = "CHD count") +
+  ggtitle("Distribution of CHD with age and gender") +
   common_theme
 ```
 
 ### 4. Probability of Disease in Smokers
 Smoking or not doesn't have significant impact on risk of ten year CHD.
+
 ```{r}
 d2 <- CHD %>% group_by(currentSmoker) %>% summarise(perc = mean(TenYearCHD=='1'))
 d2
 ```
 
 ### 5. Line Chart of Percentage of CHD with Age and Gender
+
 ```{r}
 d3 <- CHD_a %>% group_by(agec,factor(is_male)) %>% summarise(perc = mean(TenYearCHD=='1'))
 d3
-ggplot() + 
-geom_line(data=d3,aes(agec, perc,group =`factor(is_male)`,color =`factor(is_male)` ))+
-scale_y_continuous(labels=scales::percent)+
-labs(x='Age Group',y='Percentage',color='Gender' )+
-ggtitle("Distribution of Percentage of CHD with Age and Gender")+
-common_theme
+ggplot() +
+  geom_line(data = d3,
+            aes(agec, perc, group = `factor(is_male)`, color = `factor(is_male)`)) +
+  scale_y_continuous(labels = scales::percent) +
+  labs(x = 'Age Group', y = 'Percentage', color = 'Gender') +
+  ggtitle("Distribution of Percentage of CHD with Age and Gender") +
+  common_theme
 ```
 
 ### 6. Pairwise Correlation Analysis
+
 ```{r}
 a <- CHD[,c(1,3,5,7,9,11,13,15)]
 pairs(a, col = "coral",main = "Pairwise Correlation Analysis")
 ```
 
 ### 7. Distribution of BMI and Cigarettes per day
+
 ```{r}
-ggplot(data = CHD, aes(BMI,glucose,color = age)) + geom_point(fill = "blue") 
-ggplot(data = CHD, aes(x = cigsPerDay, color = education)) + geom_histogram(color="black", fill="pink")+labs(x='Cigarettes per day', y = 'Count of people')
-#+  + geom_vline(aes(intercept=mean(cigsPerDay)), color="blue", linetype="dashed", size=12)
+ggplot(data = CHD, aes(BMI, glucose, color = age)) + 
+  geom_point(fill = "blue") 
+ggplot(data = CHD, aes(x = cigsPerDay, color = education)) +
+  geom_histogram(color = "black", fill = "pink") +
+  labs(x = 'Cigarettes per day', y = 'Count of people')
 ```
+
 ### 8. Relationship of BP and Prevalent Hypertension with TenYearCHD
+
 ```{r}
 CHD2 %>%
-  ggplot(aes(x=TenYearCHD,y=BP))+
-  geom_boxplot(fill ='purple')+
-  xlab("Coronary Heart Disease")+
-  ylab("Blood Pressure")+
-  facet_grid(~prevalentHyp)+
-  ggtitle("BP and prevalentHyp with TenYearCHD")+
-  geom_jitter(alpha = 0.5, width = 0.2, height = 0.2, color = "tomato")
+  ggplot(aes(x = TenYearCHD, y = BP)) +
+  geom_boxplot(fill = 'purple') +
+  xlab("Coronary Heart Disease") +
+  ylab("Blood Pressure") +
+  facet_grid( ~ prevalentHyp) +
+  ggtitle("BP and prevalentHyp with TenYearCHD") +
+  geom_jitter(
+    alpha = 0.5,
+    width = 0.2,
+    height = 0.2,
+    color = "tomato"
+  )
 ```
+
 ### 9. Relationship of TotChol and Prevalent Stroke with TenYearCHD
+
 ```{r}
 CHD2 %>%
-  ggplot(aes(x=TenYearCHD,y=totChol))+
-  geom_boxplot(fill ='orange')+
-  xlab("Coronoray Heart Disease")+
-  ylab("Total Cholestrol")+
-  facet_grid(~prevalentStroke)+
-  geom_jitter(alpha = 0.5, width = 0.2, height = 0.2, color = "tomato")+
+  ggplot(aes(x = TenYearCHD, y = totChol)) +
+  geom_boxplot(fill = 'orange') +
+  xlab("Coronoray Heart Disease") +
+  ylab("Total Cholestrol") +
+  facet_grid( ~ prevalentStroke) +
+  geom_jitter(
+    alpha = 0.5,
+    width = 0.2,
+    height = 0.2,
+    color = "tomato"
+  ) +
   ggtitle("Cholestrol and prevalentStroke with CHD")
 ```
+
 ### 10. Distribution of TotChol within gender and Prevalent Stroke
+
 ```{r}
 ggplot(data = CHD2 ,aes(x = education, fill = TenYearCHD)) +
     geom_bar(position = "dodge")+
   ggtitle("TenYearCHD relationship with education")
 ```
-### 11. TenYearCHD relationship with BMI and hearrate
+
+### 11. TenYearCHD relationship with BMI and heartrate
+
 ```{r}
 ggplot(data = CHD2, 
        aes(x = BMI, y = heartRate, 
@@ -231,7 +261,9 @@ ggplot(data = CHD2,
     geom_smooth(method = "loess") +
     labs(title = "BMI vs. HeartRate relation with CHD")
 ```
+
 ### 12. TenYearCHD relationship with age and BP
+
 ```{r}
 ggplot(CHD2, 
        aes(x = age, 
@@ -243,6 +275,7 @@ ggplot(CHD2,
 ```
 
 ### 13. Correlation plot with significant features
+
 ```{r}
 cor_heart <- cor(CHD2[,c(8,10:15)])
 cor_heart
@@ -252,10 +285,26 @@ corrplot(cor_heart,method = 'square',type='upper')
 ## IV.Machine Learning
 
 ### 1. Split Dataset
+
 ```{r}
 library(fastDummies)
 CHD_o<-data.frame(CHD)
-CHD<-dummy_cols(CHD,select_columns=c('is_male','education','currentSmoker','BPMeds','prevalentStroke','prevalentHyp','diabetes','TenYearCHD'),remove_first_dummy=TRUE,remove_selected_columns=TRUE)
+CHD <-
+  dummy_cols(
+    CHD,
+    select_columns = c(
+      'is_male',
+      'education',
+      'currentSmoker',
+      'BPMeds',
+      'prevalentStroke',
+      'prevalentHyp',
+      'diabetes',
+      'TenYearCHD'
+    ),
+    remove_first_dummy = TRUE,
+    remove_selected_columns = TRUE
+  )
 ```
 
 ```{r}
@@ -276,12 +325,14 @@ set.seed(1)
 id <- createDataPartition(CHD$TenYearCHD, p = 0.8, list = FALSE)
 train<-CHD[id, ]
 test<-CHD[-id, ]
+
 id_o <- createDataPartition(CHD_o$TenYearCHD, p = 0.8, list = FALSE)
 train_o<-CHD_o[id_o, ]
 test_o<-CHD_o[-id_o, ]
 ```
 
 ### 2a. Linear Regression Classification
+
 ```{r}
 train_y <-train_o$TenYearCHD
 test_y <- test_o$TenYearCHD
@@ -299,11 +350,13 @@ cat("The linear regression model accuracy is", accuracy)
 
 cmat <- confusionMatrix(as.factor(linear_results), as.factor(test_y), positive = "1")
 cmat
+
 #F1 score
 roc.curve( as.numeric(test_y),as.numeric(linear_results))
 ```
 
 ### 2b. Linear Regression with Lasso Classification
+
 ```{r}
 # Create formula
 formula <- as.formula(TenYearCHD ~ .)
@@ -312,8 +365,10 @@ formula <- as.formula(TenYearCHD ~ .)
 train.matrix <- model.matrix(formula, train)[, -1]
 train_y <- train$TenYearCHD
 fit <- cv.glmnet(train.matrix, train_y, family = "binomial", alpha = 1, nfolds = 10)
+
 # plot 
 plot(fit)
+
 # Create testing matrices
 test.matrix <- model.matrix(formula, test) [, -1]
 ```
@@ -331,11 +386,12 @@ test.predictions <- predict(fit, test.matrix, s = fit$lambda.min, type = "respon
 Fmeasure <- c()
 cutoffs <- seq(0.05, 0.85, 0.01)
 for(cutoff in cutoffs) {
-
-predicted.CHD <- ifelse(test.predictions > cutoff, 1, 0)
-cmat <- confusionMatrix(as.factor(predicted.CHD), as.factor(test$TenYearCHD), positive = "1")
-
-Fmeasure <- c(Fmeasure,  cmat$byClass[7] )
+  predicted.CHD <- ifelse(test.predictions > cutoff, 1, 0)
+  cmat <-
+    confusionMatrix(as.factor(predicted.CHD),
+                    as.factor(test$TenYearCHD),
+                    positive = "1")
+  Fmeasure <- c(Fmeasure,  cmat$byClass[7])
 }
 
 cutoffs[which.max(Fmeasure)]
@@ -344,12 +400,14 @@ cutoffs[which.max(Fmeasure)]
 predicted.CHD <- ifelse(test.predictions > cutoffs[which.max(Fmeasure)], 1, 0)
 cmat <- confusionMatrix(as.factor(predicted.CHD), as.factor(test$TenYearCHD), positive = "1")
 cmat
+
 #F1 score
 cmat$byClass[7]
 roc.curve( as.numeric(test$TenYearCHD),as.numeric(predicted.CHD))
 ```
 
-### 3. Ridge
+### 3. Linear Regression with Ridge Classification
+
 ```{r}
 # Create formula
 formula <- as.formula(TenYearCHD ~ .)
@@ -359,16 +417,19 @@ train.matrix <- model.matrix(formula, train)[, -1]
 train_y <- train$TenYearCHD
 fit <- cv.glmnet(train.matrix, train_y, family = "binomial", alpha = 0, nfolds = 10)
 ```
+
 ```{r}
 test.matrix <- model.matrix(formula, test) [, -1]
 test.predictions <- predict(fit, test.matrix, s = fit$lambda.min, type = "response") 
 predicted.CHD <- ifelse(test.predictions > cutoffs[which.max(Fmeasure)], 1, 0)
 cmat <- confusionMatrix(as.factor(predicted.CHD), as.factor(test$TenYearCHD), positive = "1")
 cmat
+
 roc.curve( as.numeric(test$TenYearCHD),as.numeric(predicted.CHD))
 ```
 
 ### 4. Logistic Classification 
+
 ```{r}
 #use variables selected by lasso
 coefs <- coef(fit,s=fit$lambda.min)
@@ -394,6 +455,7 @@ test.predictions <- predict(fit2, newtest,  type = "response")
 predicted.CHD <- ifelse(test.predictions > cutoffs[which.max(Fmeasure)], 1, 0)
 cmat <- confusionMatrix(as.factor(predicted.CHD), as.factor(test$TenYearCHD), positive = "1")
 cmat
+
 #F1 score
 cmat$byClass[7]
 roc.curve( as.numeric(test$TenYearCHD),as.numeric(predicted.CHD))
@@ -402,7 +464,7 @@ roc.curve( as.numeric(test$TenYearCHD),as.numeric(predicted.CHD))
 fit3 <- glm(TenYearCHD ~ ., data = train, family = binomial(link = "logit"))
 summary(fit3)
 
-# Predicting test data
+#Predicting test data
 
 test.predictions <- predict(fit3, test,  type = "response") 
 
@@ -414,14 +476,13 @@ cmat
 cmat$byClass[7]
 roc.curve( as.numeric(test$TenYearCHD),as.numeric(predicted.CHD))
 
-#use  backward selection with AIC criterion
+#use backward selection with AIC criterion
 
 fit4 <- step(fit3,trace = F)
 summary(fit4)
-# Predicting test data
+#Predicting test data
 
 test.predictions <- predict(fit4, test,  type = "response") 
-
 
 predicted.CHD <- ifelse(test.predictions > cutoffs[which.max(Fmeasure)], 1, 0)
 cmat <- confusionMatrix(as.factor(predicted.CHD), as.factor(test$TenYearCHD), positive = "1")
@@ -433,6 +494,7 @@ roc.curve( as.numeric(test$TenYearCHD),as.numeric(predicted.CHD))
 ```
 
 ### 5. KNN - K-Nearest Neighbors 
+
 ```{r}
 set.seed(1)
 #set  10-folds cross validation 
@@ -458,6 +520,7 @@ roc.curve( as.numeric(test$TenYearCHD),as.numeric(predicted.CHD))
 ```
 
 ### 6. Random Forest
+
 ```{r}
 set.seed(1)
 #set  10-folds cross validation 
@@ -469,7 +532,6 @@ ctrl <- trainControl(method = "cv",
 m <- train(factor(TenYearCHD) ~ ., data = train, 
            method = "rf",
            trControl = ctrl)
-
 m
 
 plot(m)
@@ -479,16 +541,14 @@ plot(varImp(m))
 
 test.predictions <- predict(m, test,  type = "prob")[,2]
 
-
 predicted.CHD <- ifelse(test.predictions > cutoffs[which.max(Fmeasure)], 1, 0)
 cmat <- confusionMatrix(as.factor(predicted.CHD), as.factor(test$TenYearCHD), positive = "1")
 cmat
 
-roc.curve( as.numeric(test$TenYearCHD),as.numeric(predicted.CHD))
+roc.curve(as.numeric(test$TenYearCHD),as.numeric(predicted.CHD))
 ```
 
-
-### 7.decision tree
+### 7. Decision Tree
 
 ```{r}
 library(rpart)
@@ -499,9 +559,11 @@ train$TenYearCHD<-as.factor(train$TenYearCHD)
 fit5 <- rpart(TenYearCHD~., data = train, method = 'class')
 rpart.plot(fit5, extra = 106)
 ```
+
 ```{r}
 predicted.CHD <-predict(fit5, test, type = 'class')
 ```
+
 ```{r}
 cmat <- confusionMatrix(as.factor(predicted.CHD), as.factor(test$TenYearCHD), positive = "1")
 cmat
@@ -509,7 +571,7 @@ cmat
 roc.curve( as.numeric(test$TenYearCHD),as.numeric(predicted.CHD))
 ```
 
-### 8. Extreme Gradient Boostig Model 
+### 8. Extreme Gradient Boosting Model 
 
 ```{r}
 #Creating a matrix, one-hot encoding for factor variable
@@ -530,8 +592,8 @@ xgb_params <- list("objective" = "multi:softprob",
                    "num_class" = nc)
 watchlist <- list(train = train_matrix, test = test_matrix)
 ```
-```{r}
 
+```{r}
 #XGBoost Model
 set.seed(333)
 best_model <- xgb.train(params = xgb_params,
@@ -559,12 +621,11 @@ t() %>%
 data.frame() %>%
 mutate(label = test_label, max_prob = max.col(., "last")-1)
 ```
+
 ```{r}
 cmat <- confusionMatrix(as.factor(prediction$max_prob), as.factor(test$TenYearCHD), positive = "1")
 cmat
 
 roc.curve( as.numeric(test$TenYearCHD),as.numeric(prediction$max_prob))
 ```
-
-
 
