@@ -369,6 +369,7 @@ test_x <- test_o[, -16]
 linearModel <- lm(train_o$TenYearCHD ~ ., train_o)
 result <- data.table(predict(linearModel, test_x))
 linear_results <- result[,round(V1)]
+inearModel
 
 accuracy_lm <- linear_results + test_y #0 = True negative, #2 = True positive
 accuracy <- 1 - (sum(accuracy_lm == 1)/length(accuracy_lm))
@@ -443,6 +444,7 @@ formula <- as.formula(TenYearCHD ~ .)
 train.matrix <- model.matrix(formula, train)[, -1]
 train_y <- train$TenYearCHD
 fit <- cv.glmnet(train.matrix, train_y, family = "binomial", alpha = 0, nfolds = 10)
+coef(fit, s=fit$lambda.min)
 ```
 
 ```{r}
