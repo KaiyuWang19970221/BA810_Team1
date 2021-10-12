@@ -28,6 +28,7 @@ library(randomForest)
 library(corrplot)
 library(xgboost)
 library(stringr)
+library(magrittr) 
 
 CHD <-fread("framingham.csv")
 ```
@@ -129,6 +130,8 @@ ggplot(data = CHD, aes(x = factor(TenYearCHD),
     ggtitle("Distribution of Ten Year Risk of CHD") +
     common_theme
 ```
+##There is some imbalance in the dataset as seen from plot above,  15% of records belong to peope with CHD in Ten years whereas 85% people belong to the class of No CHD in Ten years, we will deal with imbalance while splitting our data
+
 
 ### 2. Distribution of Percentage of CHD with Age
 As age increases, the percentage of CHD increases.
@@ -152,6 +155,7 @@ ggplot(d, aes(x = agec, y = perc)) +
   ggtitle("Distribution of Percentage of CHD with Age") +
   common_theme
 ```
+## Above plot shows people in age groups 65 and above are more likely to have CHD in Ten Years
 
 ### 3. Histogram of CHD with Age and Gender
 Males are more likely to have CHD than females at earlier ages.
@@ -166,6 +170,7 @@ ggplot(data=CHD_1, aes(age,fill=is_male)) +
   ggtitle("Distribution of CHD with age and gender") +
   common_theme
 ```
+##From above distribution plot we can see Females have more tendency to have CHD after 60 years whereas in males it is more prevalent after 50 years.
 
 ### 4. Probability of Disease in Smokers
 Smoking or not doesn't have significant impact on risk of ten year CHD.
@@ -174,6 +179,8 @@ Smoking or not doesn't have significant impact on risk of ten year CHD.
 d2 <- CHD %>% group_by(currentSmoker) %>% summarise(perc = mean(TenYearCHD=='1'))
 d2
 ```
+## From above table we see people being a current smoker does not show strong positive relationship with TenYearCHD
+
 
 ### 5. Line Chart of Percentage of CHD with Age and Gender
 
@@ -188,6 +195,7 @@ ggplot() +
   ggtitle("Distribution of Percentage of CHD with Age and Gender") +
   common_theme
 ```
+###Above plot shows for females tend to have more CHD and the prevalence incrases in higher age groups compared to males
 
 ### 6. Pairwise Correlation Analysis
 
@@ -196,17 +204,30 @@ a <- CHD[,c(1,3,5,7,9,11,13,15)]
 pairs(a, col = "coral",main = "Pairwise Correlation Analysis")
 ```
 
+
+
 ### 7. Distribution of BMI and Cigarettes per day
 
 ```{r}
 ggplot(data = CHD, aes(BMI, glucose, color = age)) + 
   geom_point(fill = "blue") 
-ggplot(data = CHD, aes(x = cigsPerDay, color = education)) +
+ggplot(data = CHD, aes(x = cigsPerDay)) +
   geom_histogram(color = "black", fill = "pink") +
   labs(x = 'Cigarettes per day', y = 'Count of people')
 ```
+## Many people are in our dataset dont smoke and very few smoke
 
-### 8. Relationship of BP and Prevalent Hypertension with TenYearCHD
+
+### 8.Probability distribution of TenYearCHD=1 with systolic BP
+```{r}
+CHD %>% mutate(TenYearCHD = as.numeric(TenYearCHD)-1) %>%
+        ggplot(aes(x=sysBP, y=TenYearCHD)) + 
+        geom_jitter(height = .05, aes(color = factor(TenYearCHD))) + 
+        geom_smooth(method = "lm",  se = FALSE) +
+        ylab("Probality of TenYearCHD=1") + xlab("Systolic BP")
+```
+
+### 9. Relationship of BP and Prevalent Hypertension with TenYearCHD
 
 ```{r}
 CHD2 %>%
@@ -223,9 +244,10 @@ CHD2 %>%
     color = "tomato"
   )
 ```
+## People with prevalent Hypertension and high median BP are most likely to have CHD in Ten Years
 
-### 9. Relationship of TotChol and Prevalent Stroke with TenYearCHD
 
+### 10. Relationship of TotChol and Prevalent Stroke with TenYearCHD
 ```{r}
 CHD2 %>%
   ggplot(aes(x = TenYearCHD, y = totChol)) +
@@ -241,16 +263,19 @@ CHD2 %>%
   ) +
   ggtitle("Cholestrol and prevalentStroke with CHD")
 ```
+## Irrespective of prevalent Stroke yes or no, people who in general have higher median TotChol levels tend me be more probable to have CHD in Ten years
 
-### 10. Distribution of TotChol within gender and Prevalent Stroke
+
+### 11. Distribution of TotChol within gender and Prevalent Stroke
 
 ```{r}
 ggplot(data = CHD2 ,aes(x = education, fill = TenYearCHD)) +
     geom_bar(position = "dodge")+
   ggtitle("TenYearCHD relationship with education")
 ```
+## education level 1 belongs to lowest and 4 is the highest. Above plot shows that TenYearCHD is more probable in people with lower levels of education.
 
-### 11. TenYearCHD relationship with BMI and heartrate
+### 12. TenYearCHD relationship with BMI and heartrate
 
 ```{r}
 ggplot(data = CHD2, 
@@ -260,8 +285,9 @@ ggplot(data = CHD2,
     geom_smooth(method = "loess") +
     labs(title = "BMI vs. HeartRate relation with CHD")
 ```
+## Most people have BMI level between 20-40 and normal hearRate ranges between 50-100 with some outliers. People are more likely to have TenYearCHD if the HeartRate is above 75 but there is not a very strong relationship
 
-### 12. TenYearCHD relationship with age and BP
+### 13. TenYearCHD relationship with age and BP
 
 ```{r}
 ggplot(CHD2, 
@@ -272,14 +298,16 @@ ggplot(CHD2,
              alpha = .6) +
   labs(title = "BP by age related to TenYearCHD")
 ```
+## For older people the BP levels tend to be higher than people below 50 years and so is the probability of TenYearCHD
 
-### 13. Correlation plot with significant features
+### 14. Correlation plot with significant features
 
 ```{r}
 cor_heart <- cor(CHD2[,c(8,10:15)])
 cor_heart
 corrplot(cor_heart,method = 'square',type='upper')
 ```
+##BP seems highly correlated to totChol, age and BMI. cigsPerDay is highly negatively correlated with age which makes sens.
 
 ## IV. Machine Learning
 
@@ -312,7 +340,7 @@ names(CHD)
 ```
 
 ```{r}
-# we decided to do oversampling on our imbalanced data.
+# we decided to do both under-sampling and oversampling on our imbalanced data using ROSE(Random Over Sampling Examples) package which deals with imbalanced classes in case of binary classification problems
 library(ROSE)
 CHD <- ovun.sample(TenYearCHD ~ ., data = CHD, method = "both", p=0.5,N=2000, seed = 1)$data
 CHD_o<-ovun.sample(TenYearCHD ~ ., data = CHD_o, method = "both", p=0.5,N=2000, seed = 1)$data
@@ -597,9 +625,9 @@ watchlist <- list(train = train_matrix, test = test_matrix)
 set.seed(333)
 best_model <- xgb.train(params = xgb_params,
                        data = train_matrix,
-                       nrounds = 100,
+                       nrounds = 80,
                        watchlist = watchlist,
-                       eta = 0.001,
+                       eta = 0.01,
                        max.depth = 3,
                        gamma = 0,
                        subsample = 1,
